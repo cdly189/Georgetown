@@ -1,0 +1,215 @@
+---
+title: 'MATH 510: R Midterm'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### NAME: <Cuong Ly>
+
+Please solve this exam in this R markdown file. Rename the file "R_midterm_YOURNAME.Rmd" and type your name in the appropriate spot a few lines above. Remember to use Ctrl+Alt+I to create the R code blocks.
+
+Note that you must use functions available in base R or the tidyverse to solve this exam.
+
+Send me the R markdown file AND the compiled/knitted HTML version of it by email before  11:59pm on Mon Nov 29.
+
+### Question 1: The sampling distribution of the sample mean
+
+This exercise explores sampling distributions of the sample mean for several sample sizes. First, let's quickly review some terminology. We take a random sample of size $n$ from some population (which in this exercise we'll assume has a known, standard normal distribution) and we compute and then store the mean of the sample. Then repeat: take another sample of size $n$, compute and store the mean; then another sample of size $n$, compute and store the mean. These stored means will differ because the samples will contain different numbers. The sampling distribution for the sample mean, for samples of size $n$, is the probability distribution for these sample mean values.
+
+(A) Generate a random sample of size 10 from a standard normal random variable and store its mean in a variable `x`. Print `x`.
+
+```{r}
+# Answer to (A):
+set.seed(1234)
+x <- mean(rnorm(10))
+x
+```
+
+
+(B) Repeat part (A) a thousand times, storing the vector of means in a variable `vmeans`. Then depict the (empirical) sampling distribution for the sample mean -- for samples with size 10 -- by creating a histogram of `vmeans` with 30 bins.
+
+```{r}
+# Answer to (B):
+set.seed(123)
+df <- as.data.frame(matrix(rnorm(10000),nrow=1000))
+vmeans <- apply(df,1,mean)
+hist(vmeans,breaks = 30)
+
+```
+
+
+(C) Compute the mean and standard deviation of `vmeans`. (The standard deviation of a statistic's sampling distribution is called the statistic's standard error.) Compare the mean of `vmeans` to the mean of a standard normal distribution. Compare the standard deviation of `vmeans` to the quantity $1/\sqrt{10}\approx 0.316.$ 
+
+```{r}
+# Answer to (C):
+mean(vmeans)
+sd(vmeans)
+# The mean of the standard normal distribution is 0, while the mean of vmeans is slightly smaller ( -0.00237 < 0)
+# The standard deviation of vmeans is slightly bigger than 0.316
+```
+
+
+(D) Create a function `sampdistmeans_norm` that accepts two arguments, the sample size $n$ (which was 10 above) and the number of iterates $k$ used to construct the distribution (this was 1000 above), that operationalizes the procedure in (C). That is, the function first creates an $k$-vector `vmeans` where each entry is the mean of a sample of size $n$ from a standard normal distribution. Then the function computes the mean $m$ and standard deviation $s$ of `vmeans`. The function should return a list with three elements: the mean $m$ stored with name "mean", the standard deviation $s$ stored with name "stderr", and the vector `vmeans` stored with name "vmeans".
+
+```{r}
+# Answer to (D):
+sampdistmeans_norm <- function(n,k){
+  set.seed(123)
+  df <- as.data.frame(matrix(rnorm(k*n),nrow=k))
+  vmeans <- apply(df,1,mean)
+  m <- mean(vmeans)
+  s <- sd(vmeans)
+  return (c(mean=m,stderr=s,vmeans=vmeans))
+}
+
+```
+
+
+(E) Run `sampdistmeans_norm(10,1000)`, storing the result in a list `list10`. This replicates the analysis in A, B and C (in a statistical sense). Print the mean and standard error from `list10` to verify that the mean is close to zero and the standard error is close to 0.31.
+
+```{r}
+# Answer to (E):
+list10 <- sampdistmeans_norm(10,1000)
+mean(list10)
+sd(list10)
+```
+
+
+(F) We next explore the behavior of the mean's sampling distribution as the sample size changes. We'll consider three sample sizes: 10, 50, 500. Run the function `sampdistmeans_norm` from D and E for the sample sizes 50 and 500 (keeping $k=1000$) and store the results in variables `list50` and `list500`. Does the standard error of the sample mean increase or decrease as the sample size $n$ increases from 10 to 50 and then to 500? By how much?
+
+```{r}
+# Answer to (F):
+list50 <- sampdistmeans_norm(50,1000)
+mean(list50)
+sd(list50)
+
+list500 <- sampdistmeans_norm(500,1000)
+mean(list500)
+sd(list500)
+
+# The standard error decrease when sample size increase from 10 to 50 and decrease again when sample size is 500
+# Sample size 10 to 50: 0.325656 - 0.1404857 = 0.18517
+# Sample size 10 to 500: 0.325656 - 0.04284214 = 0.2828346
+```
+
+
+(G) Create a single figure composed of three histograms of the `vmeans` vectors from `list10`, `list50` and `list500`. The histograms should use 30 bins and they should be arrayed vertically, with the one corresponding to sample size 10 on top, sample size 50 in the middle, and sample size 500 on the bottom. Make sure that all of the histograms have the same $x$ axis by using the same `xlim` parameter in each. What are your takeaways from these graphs?
+
+```{r}
+# Answer to (G):
+set.seed(123)
+df1 <- as.data.frame(matrix(rnorm(10000),nrow=1000))
+vmeans1 <- apply(df1,1,mean)
+
+df2 <- as.data.frame(matrix(rnorm(50000),nrow=1000))
+vmeans2 <- apply(df2,1,mean)
+
+df3 <- as.data.frame(matrix(rnorm(500000),nrow=1000))
+vmeans3 <- apply(df3,1,mean)
+
+mat <-  matrix(c(1,2,3,3), 2, 2, byrow=TRUE)
+layout(mat)
+hist(vmeans1,breaks = 30,xlim = c(-1.5,1.5))
+hist(vmeans2,breaks = 30,xlim = c(-1.5,1.5))
+hist(vmeans3,breaks = 30,xlim = c(-1.5,1.5))
+
+# The bigger sample size produces a "trulier" standard normal distribution with mean at 0 and standard deviation equal to 1
+```
+
+
+### Question 2: Puffin's Lifeboat
+
+You are a puffin living in northern Alaska, as in way way up there. You've just read the U.S. government's report on climate change and are concerned that your favorite ice shelf will break away, stranding you and your little puffin family in the middle of the Bering Sea. Your only hope is to get a lifeboat from Polar Bear Custom Lifeboats Inc (PBCLI Inc). You're filling out the lifeboat order form online because you're terrified that the polar bear owner will eat you if you show up in person. Also, you're an Amazon Prime member, so shipping's free. To your dismay, the website doesn't say what size of boat a puffin family should order. Instead, PBCLI Inc lists the boat sizes delivered for all of their recent orders, which are for families of various other species you've seen in your neighborhood. Lacking an alternative and desperate to get your boat before the ice melts, you devise a clever plan that uses your base installation of R. This exercise executes that plan.
+
+(A) You download the boats ordered from PBCLI's website into a CSV file called pbcli_boats.csv. You figure that boat size ordered depends on the weights and displacement (volume) of the species that ordered the boat. So you go to Wikipedia and find the average weights and displacements for all of the species. You store this in puffins_lifeboat.csv. Import these files into R as data frames using the following syntax:
+
+`data_frame <- read.csv(filename, header=TRUE)`.
+
+Then merge these files together to create one data frame called `df` containing the Animal, boatsize, wt_lbs, and disp_ft3 columns.
+
+```{r}
+# Answer to (A):
+puffin_df = read.csv('puffins_lifeboat.csv', header = TRUE)
+boat_df = read.csv('pbcli_boats.csv', header = TRUE)
+
+df = merge(puffin_df, boat_df)
+head(df)
+```
+
+
+(B) Print the summary stats of the fields in `df`. How many observations are there?
+
+```{r}
+# Answer to (B):
+summary(df)
+
+# There are 31 observations
+```
+
+
+(C) You hypothesize that boat size is related to weight and displacement in the following way: 
+
+$$ boatsize_i = \alpha + \beta \;\log(weight_i) + \gamma \;disp_i + \epsilon_i $$
+You realize that your model will not be exact. After all, Santa's Reindeer need room for Santa's sleigh, Siberian Huskies need room for their treadmills, and Salmon need room for a saltwater tank. These idiosyncracies are captured in the $\epsilon$ term. 
+
+Ok, back to your model. You will estimate the parameters $\alpha$, $\beta$ and $\gamma$ using linear regression, which you know how to do in R. Then you will use these estimates and your weight and displacement to determine which boat to get! So clever!
+
+First, create a column in `df` called `logwt` that takes the natural log of the weight column. Then fit the linear model above and print the coefficient estimates. What is the $R^2$ of the regression? Are the coefficients statistically significant from zero?
+
+```{r}
+# Answer to (C):
+df['logwt'] = log(df['wt_lbs'])
+lin_mo = lm(boatsize ~ (logwt + disp_ft3), data = df)
+lin_mo
+summary(lin_mo)
+
+# The R^2 is 0.9712 and adjusted R^2 is 0.9691 
+# Only disp_ft3 statistically significant from 0. The other two are not at 0.05 level
+```
+
+
+(D) Next, use the estimated coefficients to determine the size of your boat. You're a puffin and you estimate your weight at 2 pounds and displacement at 2 cubic feet. 
+
+```{r}
+# Answer to (D):
+coff = lin_mo$coefficients
+size_boat = coff[1] + (coff[2] * log(2)) + (coff[3] * 2)
+size_boat
+```
+
+
+(E) You're just about to put your credit card info in and buy your boat when you suddenly think you should look at your model a little more. Specifically, you want to see how the actual boat sizes purchased from PBCLI Inc compare to the values predicted from your regression model. First, add the predicted boat sizes as a column to `df` called `predicted`. Now, boat sizes can't be negative. Does your model predict a negative boat size for any of the species? If so, which ones? 
+
+```{r}
+# Answer to (E):
+df['predicted'] = coff[1] + (coff[2] * df$logwt) + (coff[3] * df$disp_ft3)
+
+# Negative boat size: Brown Mouse, Spider, Wooly Bear Moth 
+```
+
+
+(F) Next, create a plot with the actual boat sizes purchased on the $x$-axis and the predicted boat sizes from your model on the $y$-axis. Pass the option `log="xy"` to the `plot()` function so that the $x$- and $y$-axes are on a log scale. Color the data point corresponding to Santa's Reindeer in red. Label the $x$-axis "Actual" and the $y$-axis "Predicted". Finally, use the `abline()` function to add a 45 degree line to your plot (*Hint:* use the help file to see how `abline()` works. What intercept and slope does a 45 degree line have?).
+
+```{r}
+# Answer to (F):
+plot(df$boatsize, df$predicted, log = 'xy', col = 'red',
+     xlab = 'Actual', ylab = 'Predicted', main = 'Actual vs Predicted')
+abline(a = 0, b = 1)
+
+# a 45 degree line has 1 slope and intercept 0 
+```
+
+
+(G) Are points above the 45 degree line of your graph in F cases in which the predicted value is greater than or less than the actual value? Based on this, does your model under- or over-estimate the actual values for boat sizes close to the value you found in part D? Do you think you should consider a smaller or a larger boat?
+
+```{r}
+# Answer to (G):
+#The points are above 45 degree line in cases where the predicted value is higher than the actual value.
+
+# The model overestimates the actual value for boat sizes. Thus, we should consider buying a smaller boat.
+```
