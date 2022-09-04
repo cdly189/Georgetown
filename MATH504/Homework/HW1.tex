@@ -1,0 +1,109 @@
+\documentclass[12pt]{article}
+\usepackage{wasysym}
+% for bold math symbols, \bm command:
+\usepackage{bm}
+% for real number set symbol, \mathcal{R}:
+\usepackage{amsfonts}
+\usepackage{color}
+\newcommand{\tr}{^{\sf T}}
+\newcommand{\m}[1]{{\bf{#1}}}
+\newcommand{\g}[1]{\bm #1}
+\newcommand{\C}[1]{{\cal {#1}}}
+\topmargin -1.1in
+%\textwidth 6.42in
+\textwidth 7.00in
+\textheight 10in
+%\oddsidemargin -.075in
+%\evensidemargin -.075in
+\oddsidemargin -.30in
+\evensidemargin -.30in
+%-------------------------------------------------------------------------------
+% get epsf.tex file, for encapsulated postscript files:
+\input epsf
+%-------------------------------------------------------------------------------
+% macro for Postscript figures the easy way
+% usage:  \postscript{file.ps}{scale}
+% where scale is 1.0 for 100%, 0.5 for 50% reduction, etc.
+%
+\newcommand{\postscript}[2]
+ {\setlength{\epsfxsize}{#2\hsize}
+  \centerline{\epsfbox{#1}}}
+\begin{document}
+%----------------------------
+\vspace{.2 cm}
+
+\begin{center}
+{ \bf Homework 1 :: MATH 504 ::  Due Friday, January 21st, 11:59 pm} \\[.2in]
+\end{center}
+Your homework submission must be a single pdf called ``LASTNAME-hw1.pdf" 
+with your solutions to all theory problem to receive full credit. All answers must be typed in Latex.
+Submission should be done on Canvas.
+
+
+\begin{enumerate}
+
+
+\item The dual norm of $\|\;.\; \|$ is defined as 
+\[
+\|x\|_*=\max_{\|z\|\le 1} z\tr x.
+\]
+Prove that the dual norm is indeed a norm.
+%%%%
+
+\item Geometrically describe with reasoning the following unit ball in $\mathbb R^2$
+\[
+B_{\infty}(1)=\{x\in\mathbb R^2: \quad \|x\|_{\infty}\le 1\}.
+\]
+
+%
+\item Prove the following triangle inequality 
+\[
+\|x+y\|_2\le \|x\|_2+\|y\|_2,\quad\quad \forall x,y\in\mathbb R^n.
+\]
+When does the equality hold?
+%
+\item Prove that for any matrix $A=[a_{i,j}]_{m\times n}$, the matrix $A\tr A$ is symmetric.  
+
+%\item Suppose $A$ is an $n\times n$ matrix
+% and $x$ is a $n$ vector. Show that 
+% \[
+% \|Ax\|_2\le \|A\|_F \|x\|_2.
+% \]
+% {\it Hints.} Let $a_i\tr$ be the $i$th row of $A$.
+% Use the Cauchy-Schwarz inequality to get 
+% \[
+% (a_i\tr x)^2\le \|a_i\|_2^2 \|x\|_2^2.
+% \]
+%Then add the resulting $n$ inequalities. 
+ %%%%
+ 
+%\item Find the eigenvalues and the corresponding eigenvectors of the matrix
+%\[
+%A=
+%\left[
+%\begin{array}{ccc}
+%2 & 2 &1\\
+%1&3&1\\
+%1&2&2
+%\end{array}
+%\right].
+%\]
+%Determine the $\det(A)$ and $trace(A)$ using the eigenvalues.
+%%%%%
+%
+%\item Find the eigenvalue decomposition of the following matrix:
+%\[
+%A=
+%\left[
+%\begin{array}{ccc}
+%3& 1 &0\\
+%1&2&1\\
+%0&1&3
+%\end{array}
+%\right]
+%\]
+\end{enumerate}
+
+
+
+\end{document}
