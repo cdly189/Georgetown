@@ -1,0 +1,170 @@
+---
+title: "Ly,Cuong,Assignment-1"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(faraway)
+data("worldcup")
+```
+# =============================
+# Question 1
+# =============================
+```{r}
+dim(worldcup)             # There are 595 observations with 7 variables
+names(worldcup)           # 7 attributes in this dataset are Team, Position, Time, Shots,                                   Passes, Tackles, Saves
+class(worldcup)           # Data Frame 
+sapply(worldcup, class)    # Numerical variables are Time, Shots, Passes, Tackles, Saves
+                           # Categorical variables are Team and Position
+```
+
+# =============================
+# Question 2
+# ==============================
+```{r}
+library(dplyr)
+# a. The mean of saves that all players made
+mean(worldcup$Saves)    # The mean of saves is 0.6672269
+
+# b. Number of players in each position
+count(worldcup,c('Position'))    # Defender: 188   Forward: 143    Goalkeeper: 36                                              Midfielder: 228
+
+# c. The median number of shots that all plays made
+median(worldcup$Shots)    # The median numbers of shots is 1 
+
+# d. The interquartile range (IQR) of passes that players made
+IQR(worldcup$Passes)    # The interquartile range of passes is 86.5
+```
+
+# =============================
+# Question 3
+# =============================
+```{r}
+# a. Number of forwards on each team
+table(worldcup$Team,worldcup$Position)[,2]
+
+```
+
+
+```{r}
+# Team had the most shots in total among all its forwards
+
+arrange(summarize(group_by(filter(worldcup,Position=='Forward'),Team),total_shots = sum(Shots)),desc(total_shots))
+
+# Team had the most shots in total among all its forwards is Uruguay 
+```
+
+
+
+```{r}
+# b. Team(s) had the defender with the most tackles
+
+defe <- subset(worldcup,Position=='Defender') # Extract a subset with Defender Position
+
+defe <- defe[order(defe$Tackles,decreasing = TRUE),]     
+
+head(defe)
+# England, Germany, Chile 
+```
+
+
+```{r}
+# c. Player played the longest time in the field? Which team did he come from? 
+#    How long did he play in the field? 
+
+max_time <- max(aggregate(worldcup$Time ~ worldcup$Team, max, data = worldcup)[,2]) # The max time is 570
+
+worldcup[which(worldcup$Time==max_time),]  # Use which to determine the index
+
+# Arevalo Rios, Maxi Pereira, and Muslera played the longest time in the field. 
+# They all came from Uruguay and they played 570 minutes
+```
+
+
+```{r}
+# d. The mean number of saves just among the goalkeepers
+mean(worldcup[worldcup$Position == 'Goalkeeper', 'Saves'])
+
+# The mean number of saves just among the goalkeepers is 11.02778
+
+```
+
+# =============================
+# Question 4
+# =============================
+```{r}
+# a. Create a histogram
+par(mfrow=c(2,2)) ##2 plots in each row, 2 plots in each column
+for(i in 4:7) { hist(worldcup[,i], xlab=names(worldcup)[i], main=NULL) }
+
+
+# We can see that four graphs are all skewed to the right 
+# A majority of players attempted less than 5 shots
+# More than 90% of players passed less than 200
+# Players mostly tackled less than 5 attempts
+# 1 save is the majority 
+
+```
+
+```{r}
+# b. Create a kernel density
+par(mfrow=c(2,2))
+for(i in 4:7) { plot(density(worldcup[,i]), main=NA, xlab=names(worldcup)[i]) }
+
+# Saves is the most difficult variable to distinguish the team's performance because the    
+# number of observations center heavily around 0. In contrast, although Shots, Passess and
+# Tackles are also skewed to the right, there are some observations that lie in the right
+# (upper levels)
+```
+
+
+
+```{r}
+# c.  A boxplot to show the distribution of playing time in field by each country
+boxplot(worldcup$Time~worldcup$Team)
+
+# The mean of playing time of more than half the teams is below 200
+# 12 out of 32 teams have range of playing time more than 200
+# The minimum value is fairly similar among teams. However, there's a big dissimilarity in 
+# the maximum values among teams  
+```
+
+
+```{r}
+# d. Correlation among all the numeric variables. Plot the correlation matrix
+cor(worldcup[,3:7])
+library(corrplot)
+corrplot(cor(worldcup[,3:7]))
+
+# Passes and Time have the highest correlation
+# Tackles and Save have the lowest correlation 
+# Passes and Time also have high correlation
+# Passes and Tackles have high correlation 
+# For Saves, except Time, it has a negative correlation with Shots, Passess, and Tackles
+```
+```{r}
+# e. A scatter plot to show the associations among shots, passes, tackles and saves by each position.
+
+plot(worldcup[4:7], pch=21, bg=rainbow(4)[worldcup$Position], oma=c(4,3,3,3))
+mtext(at=c(0.2,0.35,0.5,0.65), side=1, line=4, text=levels(worldcup$Position), col=rainbow(4))
+
+# Midfielder has more passes but forward has the most shots 
+# Midfielder also has the most tackles
+# Goalkeeper has the most saves
+# Defender does tackles, but less than midfielder
+# Midfielder is the busiest position on the field. 
+```
+
+
+
+
