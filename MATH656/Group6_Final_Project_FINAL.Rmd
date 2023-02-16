@@ -1,0 +1,279 @@
+---
+title: "Final project"
+output: html_document
+date: "2022-12-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+pl <- read.csv("clustering_output.csv")
+pl <- pl[,2:13]
+head(pl)
+```
+
+## K-means
+```{r k-means}
+km <- kmeans(pl, centers = 7, nstart = 10)
+km
+```
+
+### Validation for K-means (SSE & SSB)
+```{r}
+km$tot.withinss/km$totss #SSE
+km$betweenss/km$totss    #SSB
+```
+
+```{r}
+#silhouette for k-means
+library(cluster)
+plot(silhouette(km$cluster, dist(pl[,1:12])), main="Silhouette")
+```
+
+## Fuzzy c means
+```{r fuzzy c-means}
+library("e1071")
+
+cluster_cmeans <- cmeans(as.matrix(pl), centers = 2)
+cluster_cmeans$withinerror  ##cluster membership likelihood for each point
+#cluster_cmeans
+
+plot(silhouette(cluster_cmeans$cluster, dist(pl[,1:12])), main="Silhouette")
+```
+
+
+# Comparing Gold Standard with Clustering Results
+```{r}
+comparGS <- read.csv('clustering_results.csv')
+head(comparGS)
+```
+
+### cEXT
+```{r}
+library(dplyr)
+sum_cEXT <- comparGS %>%
+  filter(cEXT == '1') %>%
+  group_by(Clusters) %>%
+  summarize(sum_cEXT = sum(cEXT))%>%
+  arrange(desc(sum_cEXT))
+sum_cEXT
+```
+
+### cNEU
+```{r}
+sum_cNEU <- comparGS %>%
+  filter(cNEU == '1') %>%
+  group_by(Clusters) %>%
+  summarize(sum_cNEU = sum(cNEU))%>%
+  arrange(desc(sum_cNEU))
+sum_cNEU
+```
+
+
+### cAGR
+```{r}
+sum_cAGR<-comparGS %>%
+  filter(cAGR == '1') %>%
+  group_by(Clusters) %>%
+  summarize(sum_cAGR = sum(cAGR))%>%
+  arrange(desc(sum_cAGR))
+sum_cAGR
+```
+
+###cCON
+```{r}
+sum_cCON <- comparGS %>%
+  filter(cCON == '1') %>%
+  group_by(Clusters) %>%
+  summarize(sum_cCON = sum(cCON)) %>%
+  arrange(desc(sum_cCON))
+sum_cCON
+```
+
+###cOPN
+```{r}
+sum_cOPN<-comparGS %>%
+  filter(cOPN == '1') %>%
+  group_by(Clusters) %>%
+  summarize(sum_cOPN = sum(cOPN)) %>%
+  arrange(desc(sum_cOPN))
+sum_cOPN
+```
+
+#Merge all results together
+```{r}
+CGS <- merge(sum_cEXT,sum_cNEU, by = "Clusters")
+CGS <- merge(CGS, sum_cAGR, by = "Clusters")
+CGS <- merge(CGS, sum_cCON, by = "Clusters")
+CGS <- merge(CGS, sum_cOPN, by = "Clusters")
+
+CGS
+knitr::kable(CGS)
+```
+
+Turn this into percentage
+```{r}
+CGS_percent <- data_frame(Clusters = c('0','1','2','3','4','5','6'),
+                          sum_cEXT = c('0.25','0.14','0.12','0.21','0.06','0.12','0.16'),
+                          sum_cNEU = c('0.09','0.17','0.20','0.11','0.22','0.13','0.14'),
+                          sum_cAGR = c('0.18','0.22','0.24','0.21','0.17','0.24','0.23'),
+                          sum_cCON = c('0.23','0.21','0.14','0.21','0.22','0.24','0.13'),
+                          sum_cOPN = c('0.25','0.26','0.30','0.26','0.33','0.27','0.33'))
+CGS_percent
+```
+
+
+
+##Analysis homogenous characters in each cluster
+```{r}
+nrow(comparGS)
+head(comparGS)
+```
+
+
+```{r}
+#word_count_per_post
+word_count_per_post <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_words_per_post = mean(word_count_per_post)) %>%
+  arrange(desc(average_words_per_post))
+
+#count_by_id
+count_by_id <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_post = mean(count_by_id)) %>%
+  arrange(desc(average_post))
+
+#egoism
+egoism <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_egoism_people = mean(count_egoism)) %>%
+  arrange(desc(average_egoism_people))
+
+#social
+social <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_social_person = mean(count_social)) %>%
+  arrange(desc(average_social_person))
+
+#agreeable
+agreeable <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_agreeable_person = mean(count_agreable)) %>%
+  arrange(desc(average_agreeable_person))
+
+cluster_self_define <- merge(word_count_per_post,count_by_id, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,egoism, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,social, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,agreeable, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,sum_cEXT, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,sum_cNEU, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,sum_cAGR, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,sum_cCON, by = "Clusters")
+cluster_self_define <- merge(cluster_self_define,sum_cOPN, by = "Clusters")
+cluster_self_define
+```
+
+
+
+
+
+```{r}
+#NETWORKSIZE
+NETWORKSIZE <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_NETWORKSIZE = mean(NETWORKSIZE)) %>%
+  arrange(desc(average_NETWORKSIZE))
+NETWORKSIZE
+```
+
+```{r}
+#BETWEENNESS
+BETWEENNESS <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_BETWEENNESS = mean(BETWEENNESS)) %>%
+  arrange(desc(average_BETWEENNESS))
+BETWEENNESS
+```
+
+```{r}
+#DENSITY
+DENSITY <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_DENSITY = mean(DENSITY)) %>%
+  arrange(desc(average_DENSITY))
+DENSITY
+```
+
+```{r}
+#BROKERAGE
+BROKERAGE <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_BROKERAGE = mean(BROKERAGE)) %>%
+  arrange(desc(average_BROKERAGE))
+BROKERAGE
+```
+
+```{r}
+#TRANSITIVITY
+TRANSITIVITY <- comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_TRANSITIVITY = mean(TRANSITIVITY)) %>%
+  arrange(desc(average_TRANSITIVITY))
+TRANSITIVITY
+```
+
+```{r}
+cluster_provided_metric <- merge(NETWORKSIZE,BETWEENNESS, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,DENSITY, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,BROKERAGE, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,TRANSITIVITY, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,sum_cEXT, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,sum_cNEU, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,sum_cAGR, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,sum_cCON, by = "Clusters")
+cluster_provided_metric <- merge(cluster_provided_metric,sum_cOPN, by = "Clusters")
+cluster_provided_metric
+```
+
+
+
+```{r}
+comparGS
+```
+
+
+
+Hypothesis by Roger: We can see that people in cluster 1 and cluster 5 has fewer posts than people in other clusters. Also, observe the table below, it is hard to tell what kind of personalities people in cluster 1 have. Maybe this is because they seldomly post and share their life on facebook.
+
+```{r}
+CGS
+```
+
+```{r}
+#detect "social" person
+comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_social_person = mean(count_social)) %>%
+  arrange(desc(average_social_person))
+```
+
+```{r}
+#detect "agreeable" person
+comparGS %>%
+  group_by(Clusters) %>%
+  summarize(average_agreeable_person = mean(count_agreable)) %>%
+  arrange(desc(average_agreeable_person))
+```
+
+
+
+
+
+
+
+
+
