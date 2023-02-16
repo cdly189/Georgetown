@@ -1,0 +1,164 @@
+---
+title: "Lab0"
+output: pdf_document
+date: '2023-01-19'
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r ,echo=FALSE, message=FALSE, warning=FALSE}
+#library(flipbookr)
+library(tidyverse)
+library(ggplot2)
+library(forecast)
+library(astsa) 
+library(xts)
+library(tseries)
+#library(fpp2)
+#library(fma)
+library(lubridate)
+library(tidyverse)
+#library(TSstudio)
+library(quantmod)
+library(tidyquant)
+library(plotly)
+library(ggplot2)
+
+```
+
+```{r}
+options("getSymbols.warning4.0"=FALSE)
+options("getSymbols.yahoo.warning"=FALSE)
+
+tickers = c("WMT","XOM","JPM","NFLX" )
+for (i in tickers){
+  getSymbols(i,
+             from = "2019-01-01",
+             to = "2022-12-31")}
+
+x <- list(
+  title = "date"
+)
+y <- list(
+  title = "value"
+)
+
+stock <- data.frame(WMT$WMT.Adjusted,
+                    XOM$XOM.Adjusted,
+                    JPM$JPM.Adjusted,
+                    NFLX$NFLX.Adjusted)
+
+
+stock <- data.frame(stock,rownames(stock))
+colnames(stock) <- append(tickers,'Dates')
+
+stock$date<-as.Date(stock$Dates,"%Y-%m-%d")
+```
+
+When it comes to investing, there are many options available to investors. They can either put their money in one sector or spread across different sectors. The idea behind multiple sectors is that when one sector goes south, other sectors might be unaffected or even go up. Here, I choose four stocks in different sectors to see how they are related. These four stocks are WMT (Retail), XOM (Energy), JPM (Financial Services), NFLX (Technology). The time period is 3 years, from January 1 2019 to December 31 2022. I want to see how the stocks perform before and after events like Covid, the FED decisions.
+
+```{r}
+ggplot(stock, aes(x=date)) +
+              geom_line(aes(y=WMT, colour="WMT"))+
+              geom_line(aes(y=XOM, colour="XOM"))+
+              geom_line(aes(y=JPM, colour="JPM"))+
+              geom_line(aes(y=NFLX, colour="NFLX"))+
+   labs(
+    title = "Stock Prices for the Companies in 4 sectors",
+    subtitle = "From 2019-2022",
+    x = "Date",
+    y = "Adjusted Closing Prices")+
+    theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+    guides(colour=guide_legend(title="Companies")) 
+```
+
+From the above chart, we can observe that NFLX is the most volatile stock; while the other three stay relatively constant over the 3 years period. Around March 2020, there is a big dip in the prices of the stocks. People were scared of the virus. There was so much uncertainty at the time. One thing to notice is that WMT stock does not decrease much compared to others. An explanation could be people still needed to buy household goods and food. However, 2 months later, with the FED quantitative easing and the government stimulus program, people put money in the stock market, drove the prices of stocks up. Most of the time, technology sector benefits the most after recession. It can be shown that NFLX stock skyrocketed. In the 6 months beginning of 2022, NFLX took a tremendous loss in value. The company reported the first quarter-over-quarter subsriber loss in a decade. Net income also decreased. In addition, the FED raises the interest rate. These factors contributed to a 71% decrease in NFLX stock.
+
+INTERARIVE PLOT
+
+```{r}
+g4<- ggplot(stock, aes(x=date)) +
+              geom_line(aes(y=WMT, colour="WMT"))+
+              geom_line(aes(y=XOM, colour="XOM"))+
+              geom_line(aes(y=JPM, colour="JPM"))+
+              geom_line(aes(y=NFLX, colour="NFLX"))+
+   labs(
+    title = "Stock Prices for the Companies",
+    subtitle = "From 2019-2022",
+    x = "Date",
+    y = "Adjusted Closing Prices")+
+    guides(colour=guide_legend(title="Companies")) 
+
+
+ggplotly(g4) %>%
+  layout(hovermode = "x")
+```
+
+BERKSHIRE HATHAWAY INC CLASS B
+
+```{r}
+brk <- getSymbols("BRK-B",auto.assign = FALSE, from = "2019-01-01",to = '2022-12-31',src="yahoo") 
+```
+
+```{r}
+brk=data.frame(brk)
+brk <- data.frame(brk,rownames(brk))
+#head(brk)
+
+colnames(brk)[7] = "date"
+#head(bitc)
+
+brk$date<-as.Date(brk$date,"%Y-%m-%d")
+```
+
+```{r}
+brk %>%
+  ggplot()+
+  geom_line(aes(y=BRK.B.Adjusted,x=date),color="blue")
+```
+
+Berkshire Hathaway is a conglomerate company run by the legendary Warren Buffet. Berkshire partially owns big business such as Kraft Heinz, American Express, Coca-Cola or Bank of America. For this reason, some consider that owning a Berkshire stock is equivalent to own an index fund. An index fund is a basket of collective stocks. Berkshire has two classes of stock: class A and class B. Class A is for insiders, people who work and run the company. We can only buy and sell class B, which is available to the public. Like many other stocks, BRK experienced a big decreasing in March 2020, as well as in the first half of 2022. The reason is as explained earlier: covid and high interest rate ( companies find that they are harder to do business )
+
+INTERACTIVE PLOT USING PLOTLY
+
+```{r}
+fig <- plot_ly(brk, x = ~date, y = ~BRK.B.Adjusted, type = 'scatter', mode = 'lines')
+
+fig <- fig %>% layout(title = "Basic line Plot")
+fig
+```
+
+WE CAN ALSO DO CANDLESTICK PLOT
+
+```{r}
+
+df <- tail(brk, 30)
+
+figc <- df %>% plot_ly(x = ~date, type="candlestick",
+          open = ~BRK.B.Open, close = ~BRK.B.Close,
+          high = ~BRK.B.High, low = ~BRK.B.Low) 
+figc <- figc %>% layout(title = "Basic Candlestick Chart")
+
+figc
+```
+
+CLIMATE DATA: PRECIPITATION
+
+```{r}
+climate <- read.csv('/Users/taikhanghao/Ly,Cuong-Time Series/climate.csv')
+attach(climate)
+```
+
+```{r}
+ggplot(climate,aes(x=DATE,y=PRCP,colour = NAME,group = NAME)) + 
+  geom_line() + 
+  facet_wrap(~NAME,nrow = 4) + 
+  
+  labs(x ='Date',y = 'Precipitation Amount', Title ='Precipitation in DC area in 2021') + theme(legend.position = "none") 
+```
+
+The rainy season in the Washington DC metro runs from April to August every year. As we can see from the plot above, the precipitation amount is high during that four months, which corroborate to the common knowledge. However, there is an anomoly in Washington 2.0 SSW, DC US. The amount is flat at 0. A possible explanation is that the system at that area is broken. In addition, note that Dalecarlia Reservoir and National Arboretum do not have the data from September to December.
+

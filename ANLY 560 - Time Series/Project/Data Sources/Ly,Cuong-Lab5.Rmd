@@ -1,0 +1,167 @@
+---
+title: "Lab 5"
+author: "Cuong Ly"
+date: '2023-02-16'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(forecast)
+library(astsa) 
+library(xts)
+library(tseries)
+library(fpp2)
+library(fma)
+library(lubridate)
+library(tidyverse)
+library(TSstudio)
+library(quantmod)
+library(tidyquant)
+library(plotly)
+library(ggplot2)
+```
+
+
+# Problem 1
+
+Use the temperature data in Washington D.C to answer this question.
+
+```{r}
+wt = read.csv("/Users/taikhanghao/Desktop/spring 23/time series/climate.csv", header = TRUE)
+head(wt)
+
+tobb= wt[1095:1344,c(3,11)]
+head(tobb)
+tobb$DATE<-as.Date(tobb$DATE,"%Y-%m-%d")
+
+
+tobb$DATE[1]
+tobb$DATE[length(tobb$DATE)]
+temp.ts = ts(tobb$TOBS, start=decimal_date(as.Date("2021-01-01")), frequency = 365.25)
+```
+
+
+```{r}
+plot(temp.ts)
+```
+
+# Don't need take the log
+# 
+
+
+# 2. Seasonality
+# Lag plots
+```{r}
+gglagplot(temp.ts, do.lines=FALSE)
+```
+# Correlation everywhere --> don't have seasonality
+# Decomposition function doesn't work
+
+# 3
+
+```{r}
+require(gridExtra)
+
+plot1 <- autoplot(diff(temp.ts), main="Differenced")
+plot2 <- ggAcf(diff(temp.ts), 48, main="first differenced data") 
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+```{r}
+xt=(temp.ts)
+
+##### These yeild the same answers #######
+####### First method ###########
+df2=diff(xt, differences = 2) #differencing twice
+
+df22=xt %>% diff() %>% diff() 
+
+
+plot1 <- autoplot(df2,main="first method")
+plot2 <- df22 %>% autoplot(main="second method") 
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+# First order differencing is enough
+
+```{r}
+xt %>% diff() %>% ggtsdisplay() 
+```
+# 4 Model Selection
+```{r}
+d=1
+i=1
+temp= data.frame()
+ls=matrix(rep(NA,6*23),nrow=23) # roughly nrow = 3x4x2
+
+
+for (p in 2:4)# p=1,2,3 : 3
+{
+  for(q in 2:5)# q=1,2,3,4 :4
+  {
+    for(d in 1:2)# d=1,2 :2
+    {
+      
+      if(p-1+d+q-1<=8)
+      {
+        
+        model<- Arima(xt,order=c(p-1,d,q-1),include.drift=TRUE) 
+        ls[i,]= c(p-1,d,q-1,model$aic,model$bic,model$aicc)
+        i=i+1
+        #print(i)
+        
+      }
+      
+    }
+  }
+}
+
+temp= as.data.frame(ls)
+names(temp)= c("p","d","q","AIC","BIC","AICc")
+
+#temp
+knitr::kable(temp)
+```
+
+```{r}
+temp[which.min(temp$AIC),] 
+```
+
+```{r}
+temp[which.min(temp$BIC),]
+```
+```{r}
+temp[which.min(temp$AICc),]
+```
+
+# Compare two models
+```{r}
+model_output <- capture.output(sarima(xt, 1,1,4))
+```
+```{r}
+cat(model_output[53:84], model_output[length(model_output)], sep = "\n")
+```
+
+```{r}
+model_output2 <- capture.output(sarima(xt, 1,2,2))
+```
+```{r}
+cat(model_output2[70:98], model_output2[length(model_output2)], sep = "\n")
+```
+
+```{r}
+model_output3 <- capture.output(sarima(xt, 2,1,2))
+```
+
+```{r}
+cat(model_output2[71:101], model_output2[length(model_output2)], sep = "\n")
+```
+
