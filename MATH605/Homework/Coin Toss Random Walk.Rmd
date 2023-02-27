@@ -1,0 +1,82 @@
+---
+title: "Coin Toss Random Walk"
+author: "Phillip Monin"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Coin Toss Random Walk
+
+A stochastic process is an infinite sequence of random variables. It can be viewed as a function of two variables: omega and time. For a fixed time, it is a random variable, while for a fixed omega, it is a deterministic function. We'll explore what that means with the coin toss random walk.
+
+Suppose you flip a fair coin a number of times, recording the sequence of heads and tails.
+
+```{r}
+ntimes <- 15
+omega0 <- sample(c('H','T'), ntimes, replace=T)
+print(omega0)
+```
+
+## Simple symmetric random walk
+
+Suppose that, starting with no money, you repeatedly flip the coin, earning \$1 if the coin lands heads and paying \$1 if it lands tails. What are your total winnings or losses at some fixed time in the future? How does it evolve?
+
+```{r}
+coin_to_payout <- function(heads_or_tails_vector){
+  old <- c('H','T')
+  new <- c(1,-1)
+  return(new[match(heads_or_tails_vector, old)])
+}
+
+rw <- cumsum(coin_to_payout(omega0))
+
+print(rw)
+```
+
+
+```{r}
+plot(rw, type='b')
+```
+
+Here, the omega is the *sequence* of heads and tails. The graph above is the deterministic function that results.
+
+## Fix a time, get a random variable
+
+Now we fix a time and let omega vary. That is, with time fixed, we randomly select different sequences of heads and tails and compute our aggregate winnings at that fixed time. We'll operationalize the above in a loop using a function.
+
+```{r}
+dist_at_fixed_time <- function(fixedtime, nsamples){
+  
+  # Set up storage
+  omegas <- c()
+  total_winnings <- c()
+  
+  # Now loop
+  for (i in 1:nsamples){
+    omega_i <- sample(c('H','T'), fixedtime, replace=T)
+    rw_i <- cumsum(coin_to_payout(omega_i))
+    
+    omegas <- c(omegas, paste(omega_i, collapse = ''))
+    total_winnings <- c(total_winnings, rw_i[length(rw_i)])
+    
+  }
+  
+  return(data.frame(omegas, total_winnings))
+  
+  
+}
+
+print(dist_at_fixed_time(10,20))
+
+```
+
+Clearly, this is a random variable. Let's have a look at the distribution at a later time, with more samples:
+
+```{r}
+dist <- dist_at_fixed_time(100,1000)
+hist(dist$total_winnings)
+```
+
