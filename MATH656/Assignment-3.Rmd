@@ -1,0 +1,168 @@
+---
+title: "MATH 656 - Assignment3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+```
+
+# ====================================
+# Question 1
+# ====================================
+
+```{r cars}
+# Load dataset
+Data <- USArrests 
+```
+
+
+```{r pressure, echo=FALSE}
+dim(Data) # 50 4
+# The data has 50 observations(instances) and 4 variables.
+str(Data)     # Murder and Rape are numeric variable while Assault and UrbanPop 
+              # are integer variable. All variables are continuous, 
+              # there are no categorical
+
+summary(Data)
+sapply(Data, sd, na.rm=TRUE)    # Calculate standard deviation of each variable
+```
+```{r}
+pairs(Data[,1:4], pch = 19)
+# Murder and Assault have a positive correlation 
+# Murder and UrbanPop does not have any correlation
+# Murder and Rape might have a positive correlation, but we need more tests to confirm it
+# Assault and UrbanPop does not have any correlation
+# Assault and Rape have a positive correlation 
+# UrbanPop and Rape have a positive correlation 
+```
+
+# ====================================
+# Question 2
+# ====================================
+```{r}
+scale_numeric <- function(x) x %>% mutate_if(is.numeric, function(y) as.vector(scale(y)))
+
+Data_scaled <- Data %>% scale_numeric()
+pairs(Data_scaled[,1:4], pch = 19)
+# There is no pattern changed in comparison with the results of Q1
+```
+
+# ====================================
+# Question 3
+# ====================================
+
+```{r}
+# Use the WCSS plot to determine the optimal number of clusters
+n = 10
+clust = numeric(n)
+for (i in 1:n){
+  clust[i] = kmeans(Data_scaled, i, nstart = 20)$tot.withinss
+}
+plot(1:10, clust, col = "darkred", lwd = 3, xlab = "Number of Clusters", type = "b",
+     ylab = "Total Within Cluster SS", col.axis = "navyblue")
+```
+```{r}
+# Compute SSE at different numbers of clusters to help determine the best cluster
+# 2 clusters
+km_2 <- kmeans(Data_scaled, centers = 2, nstart = 10)
+km_2
+```
+```{r}
+# 3 clusters
+km_3 <- kmeans(Data_scaled, centers = 3, nstart = 10)
+km_3
+```
+
+```{r}
+# 4 clusters
+km_4 <- kmeans(Data_scaled, centers = 4, nstart = 10)
+km_4
+```
+
+```{r}
+# 5 clusters
+km_5 <- kmeans(Data_scaled, centers = 5, nstart = 10)
+km_5
+```
+```{r}
+km_6 <- kmeans(Data_scaled, centers = 6, nstart = 10)
+km_6
+```
+
+```{r}
+km_3$tot.withinss - km_2$tot.withinss
+km_4$tot.withinss - km_3$tot.withinss
+km_5$tot.withinss - km_4$tot.withinss
+km_6$tot.withinss - km_5$tot.withinss
+```
+
+```{r}
+# We compute the change in the SSE for different clusters. We want to see 
+# how big the change from k=2 to k=3, from k=4 to k=5 are, etc. We generally
+# choose the k with the smaller gap. I can see from the WCSS graph above, k=4 
+# looks to have a smaller change from k=4 to k=5, which confirming by the 
+# calculation. This means after k=4, the SSE will not be changed too much, 
+# however, if we set k=2, the SSE would continue to change a lot. 
+# Therefore, we will choose k=4 as the optimal one in this situation. 
+```
+
+# ====================================
+# Question 4
+# ====================================
+```{r}
+# 4 clusters
+set.seed(123)
+km_4 <- kmeans(Data_scaled, centers = 4, nstart = 10)
+km_4
+# Clusters sizes are 13, 16, 8, 13
+# Cluster means are presented right below
+```
+```{r}
+km_4$withinss    # Vector of within-cluster sum of squares
+km_4$tot.withinss    # Total within-cluster sum of squares  i.e.sum(withinss).
+km_4$betweenss    # The between-cluster sum of squares, i.e.totss-tot.withinss.
+km_4$size    # The number of points in each cluster.
+```
+
+```{r}
+# Calculate the silhouette index, and list the index and also plot the 
+# silhouette index from k=2 to k=10 and confirm that the optimal cluster is 4
+set.seed(1234)
+ks <- 2:10
+WCSS <- sapply(ks, FUN = function(k) {
+kmeans(Data_scaled, centers = k, nstart = 5)$tot.withinss
+})
+ggplot(as_tibble(ks, WCSS), aes(ks, WCSS)) + geom_line() + 
+  geom_vline(xintercept = 4, color = "red", linetype = 2)
+```
+
+
+# ====================================
+# Question 5
+# ====================================
+
+```{r}
+library(factoextra)
+fviz_cluster(km_4, data = Data_scaled, centroids = TRUE, repel = TRUE, ellipse.type = "norm")
+```
+
+# ====================================
+# Question 6
+# ====================================
+```{r}
+library(cluster)
+plot(silhouette(km_4$cluster, dist(Data_scaled[,1:4])), main="Silhouette")
+```
+
+# The index with 4 clusters are lowest, 3 clusters are highest. It means that we should use 3 clusters. Nevertheless, all of the index are smaller than 0.4 . An index that smaller than 0.4 is considered not good. 
