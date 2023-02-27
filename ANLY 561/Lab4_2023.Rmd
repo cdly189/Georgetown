@@ -1,0 +1,434 @@
+---
+title: "ANLY560 Lab 4"
+author: "Dr. Purna Gamage"
+output: rmdformats::robobook
+---
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(forecast)
+library(astsa) 
+library(xts)
+library(tseries)
+library(fpp2)
+library(fma)
+library(lubridate)
+library(tidyverse)
+library(TSstudio)
+library(quantmod)
+library(tidyquant)
+library(plotly)
+library(ggplot2)
+```
+
+
+# Detrending Vs. Differencing
+
+## Detrending
+
+This is the example discussed in the lecture. These are Monthly price of a pound of chicken:Poultry (chicken), Whole bird spot price, Georgia docks, US cents per pound.
+```{r}
+data(chicken)
+```
+
+
+```{r}
+fit = lm(chicken~time(chicken), na.action=NULL) 
+# regress chicken on time
+#time creates the vector of times at which a time series was sampled.
+
+summary(fit) 
+```
+
+```{r}
+y=chicken
+x=time(chicken)
+DD<-data.frame(x,y)
+ggp <- ggplot(DD, aes(x, y)) +           
+  geom_line()
+
+ggp +                                     
+  stat_smooth(method = "lm",
+              formula = y ~ x,
+              geom = "smooth") +ggtitle("The US Chicken price: US cents per pound")+ylab("Price:US cents per pound")
+```
+
+### Let's compare "Detrend and Differenced Series"
+
+```{r,warning=FALSE,message=FALSE}
+require(gridExtra)
+
+plot1<-autoplot(resid(fit), main="detrended") 
+plot2<-autoplot(diff(chicken), main="first difference") 
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+```{r,warning=FALSE,message=FALSE}
+#par(mfrow=c(3,1)) # plot ACFs
+
+plot1 <- ggAcf(chicken, 48, main="Original Data: chicken")
+plot2 <- ggAcf(resid(fit), 48, main="detrended data") 
+plot3 <- ggAcf(diff(chicken), 48, main="first differenced data")
+
+grid.arrange(plot1, plot2, plot3,ncol=3)
+
+```
+
+
+## Differencing
+
+Differencing can be done using `difference()` function.
+
+### Example 1: Global mean land-ocean temperature deviations to 2015
+
+Global mean land-ocean temperature deviations (from 1951-1980 average), measured in degrees centigrade, for the years 1880-2015. This was an update of gtemp, but gtemp_land and gtemp_ocean are the most recent updates.
+
+```{r,warning=FALSE,message=FALSE}
+
+##### Differencing the Data ###########
+#diff(egg_ts)
+
+######## Plot together ############
+#par(mfrow=c(2,1))
+#plot(diff(globtemp))
+#acf(diff(gtemp), 48)
+
+require(gridExtra)
+
+plot1 <- autoplot(diff(egg_ts), main="Differenced")
+plot2 <- ggAcf(diff(egg_ts), 48, main="first differenced data") 
+
+grid.arrange(plot1, plot2,nrow=2)
+"""
+
+######### Better way #########
+globtemp %>% diff() %>% ggtsdisplay() 
+
+######### This is similar to taking the difference of Xt and Xt-1 #########
+xt=(globtemp)
+xt1=stats::lag(xt, k=1) ## first lag
+diffSeries=xt-xt1 # differenced
+
+#par(mfrow=c(2,1))
+#plot(diffSeries)
+#globtemp %>% diff()  %>% plot()
+## Both plots are the same
+
+
+plot1 <- autoplot(diffSeries,main="manually differenced data")
+plot2 <- globtemp %>% diff()  %>% autoplot(main="using diff() function") 
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+
+### Second order Differencing
+
+```{r,warning=FALSE,message=FALSE}
+
+xt=(globtemp)
+
+##### These yeild the same answers #######
+####### First method ###########
+df2=diff(xt, differences = 2) #differencing twice
+
+df22=xt %>% diff() %>% diff() 
+
+
+plot1 <- autoplot(df2,main="first method")
+plot2 <- df22 %>% autoplot(main="second method") 
+
+grid.arrange(plot1, plot2,nrow=2)
+
+
+######## compare first order differencing and secon order ####
+df1=xt %>% diff()
+
+plot3 <- df1 %>% ggAcf(main="first order differencing") 
+plot4 <- df2 %>% ggAcf(main="second order differencing") 
+
+grid.arrange(plot3, plot4,nrow=2)
+```
+
+
+### Example 2: Internet Usage per Minute
+
+A time series of the numbers of users connected to the Internet through a server every minute.
+
+What do you observe? How much differencing is needed for stationary (at least weakly stationary)?
+
+```{r,warning=FALSE,message=FALSE}
+xt=WWWusage
+str(xt)
+
+######### First Differencing#########
+xt %>% diff() %>% ggtsdisplay() 
+
+
+####### Second order Differencing ########
+xt %>% diff() %>% diff() %>% ggtsdisplay()
+```
+
+
+
+# AR, MA, ARMA Models
+
+## AR(p) Model Simulation
+
+Autoregression is a time series model that uses observations from previous time steps as input to a regression equation to predict the value at the next time step.
+
+It is a very simple idea that can result in accurate forecasts on a range of time series problems.
+
+The equation:
+
+ $$x_t = \phi_1 x_{t-1}+\phi_2 x_{t-2}+...+\phi_p x_{t-p}+ w_t$$
+
+successively for $t = 1,2,...,500$. Above equation represents a regression or prediction of the current value $x_t$ of a time series as a function of the past two values of the series, and, hence, the term autoregression is suggested for this model.   
+
+One way to simulate and plot data from the model in R is to use the following commands: `arima.sim()` function.
+
+### Example 3: AR(1) simulation 
+
+These are two AR(1) models; one with the coefficient +0.9 and the other with -0.9
+
+```{r, warning=FALSE}
+
+plot1 <- autoplot(arima.sim(list(order=c(1,0,0), ar=.9), n=100), ylab="x",main=(expression(AR(1)~~~phi==+.9)))
+
+plot2 <- autoplot(arima.sim(list(order=c(1,0,0), ar=-.9), n=100), ylab="x",main=(expression(AR(1)~~~phi==-.9)))
+
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+Let's check the ACF and PACF plots.
+
+
+```{r, warning=FALSE}
+
+############## positive Coeficient ~~ +0.9 ###############
+
+plot1<-ggAcf(arima.sim(list(order=c(1,0,0), ar=.9), n=100), ylab="x",
+     main=(expression(AR(1)~~~phi==+.9))) 
+
+plot2<- ggPacf(arima.sim(list(order=c(1,0,0), ar=.9), n=100), ylab="x",
+    main=(expression(AR(1)~~~phi==+.9)))
+
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+
+```{r}
+############## negative Coefficient ~~ -0.9 ###############
+plot1<-ggAcf(arima.sim(list(order=c(1,0,0), ar=-.9), n=100), ylab="x",
+     main=(expression(AR(1)~~~phi==-.9)))
+
+plot2<- ggPacf(arima.sim(list(order=c(1,0,0), ar=-.9), n=100), ylab="x",
+    main=(expression(AR(1)~~~phi==-.9)))
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+
+## auto.arima()
+
+
+```{r}
+set.seed(132)
+xt=arima.sim(list(order=c(1,0,0), ar=.9), n=1000)
+auto.arima(xt) ## this is not very reliable sometimes
+
+```
+
+Model Equation : $$x_t = 0.89x_{t-1}+w_t$$
+
+
+### Example 4: AR(2) Model
+
+What can you observe from the ACF and PACF plots.
+
+```{r}
+########### AR(2) simulation with coefficients (0.2,-0.5) ###############################
+
+set.seed((150))
+ar2 =arima.sim(list(order=c(2,0,0), ar=c(.2,-.5)), n=10000)
+
+p1<-ggAcf(ar2)  
+p2<-ggPacf(ar2)
+
+grid.arrange(p1, p2,nrow=2)
+```
+
+
+
+## MA(q) Model
+
+```{r,warning=FALSE,message=FALSE}
+
+p1<-autoplot(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",
+     main=(expression(MA(1)~~~theta==+.9))) 
+p2<- autoplot(arima.sim(list(order=c(0,0,1), ma=-.9), n=100), ylab="x",
+        main=(expression(MA(1)~~~theta==-.9)))
+
+grid.arrange(p1, p2,ncol=2)
+```
+
+```{r,warning=FALSE,message=FALSE}
+
+p1<-ggAcf(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",
+     main=(expression(MA(1)~~~theta==+.9))) 
+p2<-ggPacf(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",
+    main=(expression(MA(1)~~~theta==+.9)))
+
+grid.arrange(p1, p2,nrow=2)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+
+p1<-ggAcf(arima.sim(list(order=c(0,0,1), ma=-.9), n=100), ylab="x",
+     main=(expression(MA(1)~~~theta==-.9)))
+p2<-ggPacf(arima.sim(list(order=c(0,0,1), ma=-.9), n=100), ylab="x",
+    main=(expression(MA(1)~~~theta==-.9)))
+
+grid.arrange(p1, p2,nrow=2)
+```
+
+```{r,warning=FALSE,message=FALSE}
+set.seed(151)
+xt=arima.sim(list(order=c(0,0,1), ma=.9),n=1000)
+auto.arima(xt)              
+
+```
+$$x_t = w_t+0.9w_{t-1}$$
+### Example 5: MA(3) Model
+
+```{r,warning=FALSE,message=FALSE}
+
+########### MA(3) simulation ##################################################
+
+set.seed((150))
+ma3 =arima.sim(list(order=c(0,0,3), ma=c(0.1,.2,-.5)), n=10000)
+
+p1<-ggAcf(ma3)  
+p2<-ggPacf(ma3) 
+
+grid.arrange(p1, p2,nrow=2)
+
+#OR
+ma3 %>% ggtsdisplay() 
+```
+
+
+## ARMA(p,q) Model Simulation
+
+```{r,warning=FALSE,message=FALSE}
+########### ARMA(1,2) simulation ##################################################
+
+set.seed((150))
+arima12 =arima.sim(list(order=c(1,0,2), ar=.3, ma=c(-.2,.5)), n=10000)
+
+p1<-ggAcf(arima12)  
+p2<-ggPacf(arima12) 
+
+grid.arrange(p1, p2,nrow=2)
+
+#OR
+arima12 %>% ggtsdisplay() 
+```
+
+
+
+
+### Example 6: ARMA(2,2) Model Simulation
+
+```{r,warning=FALSE,message=FALSE}
+######################## ARIMA(2,2)####################################
+
+set.seed((150))
+arma22 =arima.sim(list(order=c(2,0,2), ar=c(.2,-.1), ma=c(-.2,.3)), n=10000)
+
+arma22 %>% ggtsdisplay()
+
+######################## ARIMA(1,4)####################################
+set.seed((150))
+arma14 =arima.sim(list(order=c(1,0,4), ar=-.4, ma=c(-.3,-.2,.1,.4)), n=10000)
+arma14 %>% ggtsdisplay()
+```
+
+
+# Model fitting
+
+## arima()
+
+Based on the acf,pacf plots: p=2, q=2
+
+```{r,warning=FALSE,message=FALSE}
+fit1 <- Arima(arma22, order=c(2, 0, 2),include.drift = TRUE) #arma(1,1)
+summary(fit1)
+
+```
+
+
+## Arima()
+
+Based on the acf,pacf plots: p=1,2,3 and q=1,3,4
+
+Following are several combinations:
+
+```{r,warning=FALSE,message=FALSE}
+fit1 <- Arima(arma14, order=c(1, 0, 1),include.drift = TRUE) #arma(1,1)
+summary(fit1)
+
+fit2 <- Arima(arma14, order=c(3, 0, 1),include.drift = TRUE) #arma(3,1)
+summary(fit2)
+
+fit3 <- Arima(arma14, order=c(1, 0, 4),include.drift = TRUE) #arma(1,4)
+summary(fit3)
+```
+
+## sarima()
+
+Compare these different models.
+
+```{r,warning=FALSE,message=FALSE}
+sarima(arima12,1,0,2)
+sarima(arima12,2,0,2)
+sarima(arima12,4,0,2)
+
+```
+
+# Best Model Part 1
+
+We also need to check the Model Diagnostics which we will discuss next week.
+
+Simulated series: `arma14` ;Based on the acf,pacf plots: p=1,2,3 and q=1,3,4
+
+```{r,warning=FALSE,message=FALSE}
+
+## empty list to store model fits
+
+ARMA_res <- list()
+
+## set counter
+cc <-1
+
+## loop over AR
+for(p in 0:3){
+  ## loop over MA
+  for(q in 0:4){
+    
+  ARMA_res[[cc]]<-arima(x=arma14,order = c(p,0,q))
+  cc<- cc+1
+  }
+}
+
+## get AIC values for model evaluation
+
+ARMA_AIC<-sapply(ARMA_res,function(x) x$aic)
+
+ARMA_res[[which(ARMA_AIC == min(ARMA_AIC))]]
+
+```
+

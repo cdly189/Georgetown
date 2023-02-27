@@ -1,0 +1,294 @@
+---
+title: "Lab4"
+author: "Cuong Ly"
+date: '2023-02-09'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(forecast)
+library(astsa) 
+library(xts)
+library(tseries)
+library(fpp2)
+library(fma)
+library(lubridate)
+library(tidyverse)
+library(TSstudio)
+library(quantmod)
+library(tidyquant)
+library(plotly)
+library(ggplot2)
+```
+
+# --------------
+# Problem 1
+# --------------
+```{r}
+# Import the data
+egg <- read.csv('/Users/taikhanghao/Desktop/spring 23/time series/eggs.csv')
+```
+
+```{r}
+# Convert to time series object
+egg$DATE <- as.Date(egg$DATE,format = "%Y-%m-%d")
+egg_ts <- ts(egg$APU0000708111,start = 1980,frequency = 12)
+```
+
+```{r}
+plot(egg,type = 'l',ylab = "Prices in Dollar $")
+```
+
+```{r}
+fit = lm(egg_ts~time(egg_ts), na.action=NULL) 
+# regress chicken on time
+#time creates the vector of times at which a time series was sampled.
+
+summary(fit) 
+```
+
+```{r}
+y=egg_ts
+x=time(egg_ts)
+DD<-data.frame(x,y)
+ggp <- ggplot(DD, aes(x, y)) +           
+  geom_line()
+
+ggp +                                     
+  stat_smooth(method = "lm",
+              formula = y ~ x,
+              geom = "smooth") +ggtitle("The US Egg price: US cents ")+ylab("Price:US cents ")
+## 
+```
+Egg price stays relatively constant from 1980 to 2010. It rose sharply and decline dramastically in 2016 and 2017 due to the widespread avian influenza epidemic. Once again, egg price skyrockted in the beginning of 2023 due to the outbreak of influenza. 
+
+# Detrend
+
+```{r,warning=FALSE,message=FALSE}
+require(gridExtra)
+
+plot1<-autoplot(resid(fit), main="detrended") 
+plot2<-autoplot(diff(egg_ts), main="first difference") 
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+```{r,warning=FALSE,message=FALSE}
+#par(mfrow=c(3,1)) # plot ACFs
+
+plot1 <- ggAcf(egg_ts, 48, main="Original Data: egg")
+plot2 <- ggAcf(resid(fit), 48, main="detrended data") 
+plot3 <- ggAcf(diff(egg_ts), 48, main="first differenced data")
+
+grid.arrange(plot1, plot2, plot3,ncol=3)
+
+```
+The detrend method does not work well for this egg price. Since in the ACF plot, the significant does not drop after 1,2, indicating the series is still not stationary. In contrast, difference method makes the series significant at lag 2
+
+# Differencing
+
+
+```{r}
+egg_ts %>% diff() %>% ggtsdisplay() 
+```
+
+# --------------
+# Problem 2
+# --------------
+Part a
+```{r}
+# AR(3)
+plot1 <- autoplot(arima.sim(list(order=c(3,0,0), ar = c(.2,-.5,.3)), n=100), ylab="x",main=(expression(AR(3)~~~phi==0.2,-0.5,0.3)))
+
+# MA(1)
+plot2 <- autoplot(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",main=(expression(MA(1)~~~phi==0.9)))
+
+# ARMA(3,1)
+plot3 <- autoplot(arima.sim(list(order=c(3,0,1), ar=c(.2,-.5,.3), ma=c(.9)), n=100), ylab="x",main=(expression(ARMA(3,1)~~~phi==0.2,-0.5,0.3,0.9)))
+
+grid.arrange(plot1, plot2,plot3,nrow=3)
+```
+
+Plot ACF and PACF plot for AR(3)
+```{r}
+plot1<-ggAcf(arima.sim(list(order=c(3,0,0), ar = c(.2,-.5,.3)), n=100), ylab="x",
+     main=(expression(AR(3)~~~phi==0.2,-0.5,0.3))) 
+
+plot2<- ggPacf(arima.sim(list(order=c(3,0,0), ar = c(.2,-.5,.3)), n=100), ylab="x",
+     main=(expression(AR(3)~~~phi==0.2,-0.5,0.3)))
+
+
+grid.arrange(plot1, plot2,nrow=2)
+```
+
+For AR model, we look at PACF graph. At 3, the graph is significant. After 3, it is not significant anymore. Thus, the graph confirms it is AR(3)
+
+
+Plot ACF and PACF plot for MA(1)
+```{r}
+p1<-ggAcf(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",
+     main=(expression(MA(1)~~~theta==0.9))) 
+p2<-ggPacf(arima.sim(list(order=c(0,0,1), ma=.9), n=100), ylab="x",
+    main=(expression(MA(1)~~~theta==0.9)))
+
+grid.arrange(p1, p2,nrow=2)
+```
+
+For MA model, we look at ACF graph. At 1, the graph is significant. After 1, it is not significant anymore. Thus, the graph confirms it is MA(1)
+
+
+Plot ACF and PACF plot for ARMA(3,1)
+```{r}
+set.seed((150))
+arima31 =arima.sim(list(order=c(3,0,1), ar=c(.2,-.5,.3), ma=c(.9)), n=100)
+
+p1<-ggAcf(arima31)  
+p2<-ggPacf(arima31) 
+
+grid.arrange(p1, p2,nrow=2)
+```
+
+For MA model, we look at ACF graph. At 1 and 2, the graph is significant. After 2, it is not significant anymore. For AR model, we look at PACF graph. At 1,2,3,4, the graph is significant. After 4, it is not significant anymore. Thus, we have 8 combinations, ARMA(1,1),  ARMA(1,2),  ARMA(2,1), ARMA(2,2), ARMA(3,1),  ARMA(3,2),  ARMA(4,1),  ARMA(4,2)
+
+
+Part b
+```{r,warning=FALSE,message=FALSE}
+#arma(1,1)
+arma11 =arima.sim(list(order=c(1,0,1), ar=.2, ma=.3), n=10000)
+fit11 <- Arima(arma11, order=c(1, 0, 1),include.drift = TRUE) 
+summary(fit11)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(1,2)
+arma12 =arima.sim(list(order=c(1,0,2), ar=.2, ma=c(.3,.5)), n=10000)
+fit12 <- Arima(arma12, order=c(1, 0, 2),include.drift = TRUE) 
+summary(fit12)
+
+```
+
+
+
+```{r,warning=FALSE,message=FALSE}
+#arma(2,1)
+arma21 =arima.sim(list(order=c(2,0,1), ar=c(.2,.5), ma=c(.3)), n=10000)
+fit21 <- Arima(arma21, order=c(2, 0, 1),include.drift = TRUE) 
+summary(fit21)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(2,2)
+arma22 =arima.sim(list(order=c(2,0,2), ar=c(.2,.5), ma=c(.3,.5)), n=10000)
+fit22 <- Arima(arma22, order=c(2, 0, 2),include.drift = TRUE) 
+summary(fit22)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(3,1)
+arma31 =arima.sim(list(order=c(3,0,1), ar=c(.2,-.5,.3), ma=c(.3)), n=10000)
+fit31 <- Arima(arma31, order=c(3, 0, 1),include.drift = TRUE) 
+summary(fit31)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(3,2)
+arma32 =arima.sim(list(order=c(3,0,2), ar=c(.2,-.5,.3), ma=c(.3,.6)), n=10000)
+fit32 <- Arima(arma32, order=c(3, 0, 2),include.drift = TRUE) 
+summary(fit32)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(4,1)
+arma41 =arima.sim(list(order=c(4,0,1), ar=c(.2,-.5,.3,-.7), ma=c(.3)), n=10000)
+fit41 <- Arima(arma41, order=c(4, 0, 1),include.drift = TRUE) 
+summary(fit41)
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#arma(4,2)
+arma42 =arima.sim(list(order=c(4,0,2), ar=c(.2,-.5,.3,-.7), ma=c(.3,.6)), n=10000)
+fit42 <- Arima(arma42, order=c(4, 0, 2),include.drift = TRUE) 
+summary(fit42)
+
+```
+
+ARMA(1,1) has the lowest AIC and BIC. Thus, it is the best model 
+
+Part c
+x_t = 0.2x_(t-1) + w_t + 0.3w(t-1)
+
+
+Part d
+```{r}
+# ARMA(1,1)
+set.seed(151)
+xt11=arima.sim(list(order=c(1,0,1), ar=.2,ma=.3),n=1000)
+auto.arima(xt11) 
+```
+
+```{r}
+# ARMA(1,2)
+set.seed(151)
+xt12=arima.sim(list(order=c(1,0,2), ar=.2,ma=c(.3,.5)),n=1000)
+auto.arima(xt12) 
+```
+
+```{r}
+# ARMA(2,1)
+set.seed(151)
+xt21=arima.sim(list(order=c(2,0,1), ar=c(.2,.5), ma=c(.3)),n=1000)
+auto.arima(xt21) 
+```
+
+```{r}
+# ARMA(2,2)
+set.seed(151)
+xt22=arima.sim(list(order=c(2,0,2), ar=c(.2,.5), ma=c(.3,.5)),n=1000)
+auto.arima(xt22) 
+```
+
+```{r}
+# ARMA(3,1)
+set.seed(151)
+xt31=arima.sim(list(order=c(3,0,1), ar=c(.2,-.5,.3), ma=c(.3)),n=1000)
+auto.arima(xt31) 
+```
+
+```{r}
+# ARMA(3,2)
+set.seed(151)
+xt32=arima.sim(list(order=c(3,0,2), ar=c(.2,-.5,.3), ma=c(.3,.6)),n=1000)
+auto.arima(xt32)
+```
+
+
+```{r}
+# ARMA(4,1)
+set.seed(151)
+xt41=arima.sim(list(order=c(4,0,1), ar=c(.2,-.5,.3,-.7), ma=c(.3)),n=1000)
+auto.arima(xt41)
+```
+
+```{r}
+# ARMA(4,2)
+set.seed(151)
+xt42=arima.sim(list(order=c(4,0,2), ar=c(.2,-.5,.3,-.7), ma=c(.3,.6)),n=1000)
+auto.arima(xt42)
+```
+
+Using auto.arima(), ARMA(1,1) still has the lowest AIC and BIC. This finding matches the result in part b
+
+Part e
+The best model is ARMA(1,1). Lag 1 is significant and has a strong correlation with the current state. The noise at lag 1 is also significant. This differs from the original model- ARMA(3,3)
+
+
+

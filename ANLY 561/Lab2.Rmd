@@ -1,0 +1,547 @@
+---
+title: "ANLY560 Lab 2"
+author: "Dr.Purna Gamage"
+date: "2023-01-24"
+output: rmdformats::robobook
+---
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(forecast)
+library(astsa) 
+library(xts)
+library(tseries)
+library(fpp2)
+library(fma)
+library(lubridate)
+library(tidyverse)
+library(TSstudio)
+library(quantmod)
+library(tidyquant)
+library(plotly)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(reshape2)
+```
+
+# ggplot
+
+You can find more detais and the cheatsheet here
+<https://ggplot2.tidyverse.org/>
+
+## Area Plot
+
+1. Load the unemployment data for different genders in US.
+
+Data was downloaded from FRED <https://fred.stlouisfed.org/graph/?g=8ej8>
+
+2. Then check for any missing values. If there are any missing values you will have to use an imputation method. Please check Quiz 1 for more details.
+
+
+
+```{r, message=FALSE, warning=FALSE}
+unemp<-read.csv("unempgender.csv",header =TRUE)
+head(unemp)
+
+#########################
+### Check for missing values ########
+
+# is.na(data)
+
+#Extract rows with missing values
+df_na_rows <- unemp[which(rowSums(is.na(unemp)) > 0),]
+df_na_rows
+
+
+#Extract columns with missing values
+df_na_cols <- unemp[, which(colSums(is.na(unemp)) > 0)]
+df_na_cols
+
+
+############ There aren't any missing values ################
+############ But if you do , you can use "imputeTS" to impute missing values
+############# more details can be found in Quiz 1 ################
+
+#library(imputeTS)
+#imputed_time_series <- na_ma(unemp, k = 4, weighting = "exponential")
+
+```
+
+3. Check the data types of your variables. this is very important especially with Date variable. You can use `as.Date()` function or any other function that we have talked about in lab1 (especially functions in `lubridate` package).
+
+4. Following graph is an area plot.
+
+```{r, message=FALSE, warning=FALSE}
+df<- data.frame(unemp)
+str(unemp) ##Dates need to be converted to DATE format
+
+df$DATE<-as.Date(df$DATE,format = "%Y-%m-%d")
+head(df)
+```
+
+
+5. Here I'm creating a categorical column for different categories. This is called `resahping` the data. You can also use `melt()` function in `reshape2` package.
+
+```{r}
+dm <- df %>% gather(gender, value, -DATE)
+dm$DATE<-as.Date(dm$DATE,format = "%Y-%m-%d")
+
+colnames(dm)<-c("DATE","Category","UnEmp")
+```
+
+6. Here I'm choosing only year for the y-axis using `scale_x_date()` function in `ggplot2` package.
+
+You can find more options here
+<https://r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html>
+
+```{r, message=FALSE, warning=FALSE}
+
+p<- ggplot(data=dm, aes(x=DATE, y=UnEmp, fill=Category)) +
+  geom_area(alpha=0.4) +ggtitle("Unemployment Rates of Men and Women Vs. Overall") +xlab("Unemployment Rate") + ylab("Date")
+
+p+scale_x_date(date_labels = "%Y")
+```
+
+ 
+
+
+ - The unemployment rate represents the number of unemployed as a percentage of the labor force. Labor force data are restricted to people 16 years of age and older, who currently reside in 1 of the 50 states or the District of Columbia, who do not reside in institutions (e.g., penal and mental facilities, homes for the aged), and who are not on active duty in the Armed Forces.
+
+ - To obtain estimates of women worker employment, the ratio of weighted women employees to the weighted all employees in the sample is assumed to equal the same ratio in the universe. The current month's women worker ratio, thus, is estimated and then multiplied by the all-employee estimate. The weighted-difference-link-and-taper formula (described in the source) is used to estimate the current month's women worker ratio. This formula adds the change in the matched sample's women worker ratio (the weighted-difference link) to the prior month's estimate, which has been slightly modified to reflect changes in the sample composition (the taper).
+
+Reference: <https://fred.stlouisfed.org/graph/?g=8ej8>
+
+
+# ggplotly
+
+1. Here we are still using the unemployment data set.
+
+2. to convert a `ggplot` plot to a `plotly` plot (or make it interactive), then you can use the function `ggplotly()`.
+
+
+```{r, message=FALSE, warning=FALSE}
+library(hrbrthemes)
+
+dm$Category<-as.factor(dm$Category)
+
+p<- ggplot(dm, aes(x=DATE, y=UnEmp, group=Category)) +
+  geom_line(aes(color=Category))+ggtitle("Unemployment Rates of Men and Women Vs. Overall") +scale_x_date(date_labels =  "%m-%Y")+theme_ipsum() +
+  theme(axis.text.x=element_text(angle=60, hjust=1)) + xlab("Unemployment Rate") + ylab("Date")
+
+ggplotly(p)
+```
+
+Reference: <https://r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html>
+
+
+# Plotly in R
+
+1. `Plotly` can be used in python as well.
+
+2. Read more about `plotly` in `R`: <https://plotly.com/r/>
+
+3. This is data on  Wages and Salaries by Industry in the US.
+
+Data was downloaded from :
+
+<https://apps.bea.gov/iTable/?reqid=19&step=2&isuri=1&categories=survey#eyJhcHBpZCI6MTksInN0ZXBzIjpbMSwyLDMsM10sImRhdGEiOltbImNhdGVnb3JpZXMiLCJTdXJ2ZXkiXSxbIk5JUEFfVGFibGVfTGlzdCIsIjYwIl0sWyJGaXJzdF9ZZWFyIiwiMTk5OCJdLFsiTGFzdF9ZZWFyIiwiMjAyMiJdLFsiU2NhbGUiLCItOSJdLFsiU2VyaWVzIiwiUSJdXX0>
+
+4. Again you have to check the data types and do the necessary data cleaning parts.
+
+```{r, message=FALSE, warning=FALSE}
+wages<-read.csv("wages.csv",header = TRUE)
+str(wages)
+#head(wages)
+
+###### need year and Quarter as characters to do this
+
+wages$date<- paste(wages$Year,wages$Quarter)
+wages$date[1] #"2001 Q1" <- 2001-01-01
+wages$date[length(wages$Year)] #"2022 Q3" <- "2022-07-01"
+
+#### adding a new date variable
+wages$date <- as.Date(as.yearqtr(wages$date), origin = "2001-01-01")
+head(wages$date)
+
+
+```
+
+
+5. Always make a copy of your dataset for each plot.
+
+6. You can notice that for `plot_ly()` function, variables should be defined using `~`.
+
+7. This is a simple scatter plot (noted as `markers` in `plotly`).
+
+```{r, message=FALSE, warning=FALSE}
+
+#Make a copy of the data set
+
+dfw<-data.frame(wages)
+colnames(dfw)<-c("Year", "Quarter", "WS", "PVT", "Goods","Manf", "Serv","Tr", "Other", "Gov", "date")
+dfw$Year<-as.Date(dfw$Year)
+
+fig <- plot_ly(dfw, x = ~date, y = ~Gov, text = ~Year, type = 'scatter', mode = 'markers+line',size = ~Gov)
+fig <- fig %>% layout(title = 'Wages and Salaries for Government Industries',
+         xaxis = list(title = 'Date', showgrid = FALSE),
+         yaxis = list(range = c(700,1600),showgrid = FALSE, title = 'Wages and Salaries')) 
+
+
+fig
+
+
+
+```
+
+
+## Adding legends
+
+1. More info here: <https://plotly.com/r/legend/>
+
+
+2. This is overall unemployment data.
+
+3. Data was downloaded from here:
+<https://fred.stlouisfed.org/series/UNRATE>
+
+4. This is a simple line plot.
+
+```{r, message=FALSE, warning=FALSE}
+ue = read.csv("UNempall.csv")
+#head(ue)
+
+### Make a copy of the data
+
+df2 <- data.frame(ue)
+df2$DATE<-as.Date(df2$DATE,format = "%Y-%m-%d")
+head(df2)
+
+df2  %>%
+   plot_ly(x=~DATE, y=~UNRATE) %>%
+   add_lines()
+```
+
+5. You can add more lines. This is the Wages and Salaries data from above. 
+
+```{r,warning=FALSE,message=FALSE}
+
+
+fig <- plot_ly(dfw, x = ~date, y = ~WS,name = 'Wages and Salaries', type = 'scatter', mode = 'lines+markers',size = ~WS)
+fig <- fig %>% add_trace(y = ~PVT,name = 'Private', mode = 'lines') 
+fig <- fig %>% add_trace(y = ~Goods,name = 'Goods Prod', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Manf,name = 'Manufacturing', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Serv,name = 'Services Prod', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Tr,name = 'Trade and Transportaion', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Gov,name = 'Government', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Other,name = 'Other', mode = 'lines')
+
+fig <- fig %>% layout(title = 'Wages and Services by industry in the US',
+         xaxis = list(title = 'Date', showgrid = FALSE),
+         yaxis = list(showgrid = FALSE, title = 'Wages and Salaries'),plot_bgcolor = "#e5ecf6") 
+
+
+fig
+```
+
+
+You can see that using `markers` is not a good idea here.
+
+6. Here I'm using `melt()` function to reshape the dataset so I have a categorical variable. Which is useful in data visualization. 
+
+```{r, message=FALSE, warning=FALSE}
+
+
+dfw_melt <- melt(dfw, id.vars = c("Year","date","Quarter"), 
+                  measure.vars = c("WS", "PVT", "Goods","Manf", "Serv","Tr", "Other", "Gov"), 
+                  variable.name = "Industry")
+
+head(dfw_melt)
+
+dfw_new<- data.frame(dfw_melt$Year,dfw_melt$date, dfw_melt$Industry,dfw_melt$value)
+colnames(dfw_new)<-c("Year","date","Industry","Wages")
+```
+
+```{r}
+p<-ggplot(dfw_new, aes(x = date, y = Wages, color = Industry)) +
+  geom_line() +
+  ggtitle("Wages and Services by industry in the US")
+
+ggplotly(p)
+```
+
+## Faceting
+
+7. Faceting can be useful when you have to visualize separate categories in separate window.
+
+8. Also, you can see that I have styled the x-axis values.
+
+Read more about angles <https://www.datanovia.com/en/blog/ggplot-axis-ticks-set-and-rotate-text-labels/>
+
+
+```{r}
+pf<-p + facet_wrap(~Industry, ncol = 4)
+pf + theme(axis.text.x = element_text(face = "bold", color = "blue", 
+                           size = 12, angle = 45))
+```
+
+
+9. I can change the style of the legend as below.
+
+For more details:
+ <https://plotly.com/r/legend/>
+ 
+ 
+```{r, warning=FALSE, message=FALSE}
+
+############### Just to make sure that df dataset is not overwritten
+
+df<- data.frame(unemp)
+#str(unemp) ##Dates need to be converted to DATE format
+df$DATE<-as.Date(df$DATE,format = "%Y-%m-%d")
+#head(df)
+
+################################
+
+fig <- plot_ly(df, x = ~DATE, y = ~Overall,name = 'Overall GDP', type = 'scatter', mode = 'lines',size = ~Overall)
+fig <- fig %>% add_trace(y = ~Men, size = ~Men,name = 'Men', mode = 'lines') 
+fig <- fig %>% add_trace(y = ~Women, size = ~Women,name = 'Women', mode = 'lines')
+
+fig <- fig %>% layout(title = 'Overall Uneployment of Men and women Vs. Overall',
+                      xaxis = list(showgrid = FALSE),
+                      yaxis = list(showgrid = FALSE))
+
+l <- list(
+  font = list(
+    family = "sans-serif",
+    size = 12,
+    color = "#000"),
+  bgcolor = "#69b3a2", #you can change the background color
+  bordercolor = "#FFFFFF",
+  borderwidth = 2)
+
+fig <- fig %>% layout(legend = l)
+fig
+```
+
+## bar graphs
+
+1. This data is for unemployment in Us for different months and by state. This is a data set that I created using many data sets. 
+
+```{r, message=FALSE, warning=FALSE}
+ue2 = read.csv("unemployment_full.csv")
+head(ue2)
+
+fig<- ue2  %>%
+   plot_ly(x=~Year, y=~unemployment.rate, color=~State) %>%
+   add_bars()
+
+fig %>% layout(title = 'Unemployment Rate in the US by month and state',
+         xaxis = list(title = 'Date', showgrid = FALSE),
+         yaxis = list(showgrid = FALSE, title = 'Unemployment Rate')) 
+
+fig
+```
+
+# Animation
+
+2. I can add Animation to the above graph using a `frame`.
+
+
+```{r, message=FALSE, warning=FALSE}
+
+fig1<- ue2  %>%
+   plot_ly(x=~Year, y=~unemployment.rate, color=~State,type = 'bar') 
+  
+fig1
+
+fig1 %>% layout(title = 'Unemployment Rate in the US by month and state',
+         xaxis = list(title = 'Date', showgrid = FALSE),
+         yaxis = list(showgrid = FALSE, title = 'Unemployment Rate')) 
+fig1
+
+
+fig <- ue2 %>%
+  plot_ly(
+    x=~State,
+    y=~unemployment.rate,
+    frame = ~Year,
+    color=~Period,
+    type = 'bar'
+  )
+
+fig %>% layout(title = 'Unemployment Rate in the US by month and state',
+         xaxis = list(title = 'Date', showgrid = FALSE),
+         yaxis = list(showgrid = FALSE, title = 'Unemployment Rate')) 
+fig
+```
+
+3. These are examples from the `plotly` site.
+
+```{r, message=FALSE, warning=FALSE}
+library(gapminder)
+
+df <- gapminder 
+fig <- df %>%
+  plot_ly(
+    x = ~gdpPercap, 
+    y = ~lifeExp, 
+    size = ~pop, 
+    color = ~continent, 
+    frame = ~year, 
+    text = ~country, 
+    hoverinfo = "text",
+    type = 'scatter',
+    mode = 'markers'
+  )
+fig <- fig %>% layout(
+    xaxis = list(
+      type = "log"
+    )
+  )
+
+fig
+```
+
+Reference:<https://plotly.com/r/animations/>
+
+## Adding sliders
+
+You can find more examples here: <https://plotly.com/r/sliders/>
+
+## Animation Using ggplotly
+
+3. These are examples from the `plotly` site.
+
+```{r, message=FALSE, warning=FALSE}
+
+#library(gapminder)
+
+p <- ggplot(gapminder, aes(gdpPercap, lifeExp, color = continent)) +
+  geom_point(aes(size = pop, frame = year, ids = country)) +
+  scale_x_log10()
+
+fig <- ggplotly(p) %>% 
+  animation_opts(
+    1000, easing = "elastic", redraw = FALSE
+  ) %>% 
+  animation_button(
+    x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+  ) %>%
+  animation_slider(
+    currentvalue = list(prefix = "YEAR ", font = list(color="red"))
+  )
+
+fig
+```
+
+
+# 3D Plots
+
+1. You can find more details here
+<https://plotly.com/r/3d-line-plots/>
+
+2. This is a covid data set that I downloaded from here:
+<https://github.com/owid/covid-19-data/tree/master/public/data>
+
+3.Data set is very large and has much cleaning to do.
+
+4. I selected a few variables of my interest and did a little bit of cleaning.
+
+```{r, message=FALSE, warning=FALSE}
+
+covid<-read.csv("owid-covid-data_new.csv",header=TRUE)
+
+cd<-data.frame(covid$continent,covid$location,covid$date,covid$total_cases,covid$new_cases,covid$total_deaths,covid$new_deaths,covid$total_vaccinations,covid$people_fully_vaccinated,covid$total_boosters,covid$icu_patients)
+
+cd$covid.date<-as.Date(cd$covid.date,"%m/%d/%y")
+
+
+####### sort data by decending
+
+cd_new <- cd[order(cd$covid.date,decreasing = TRUE),]
+
+
+################ NA rows #####
+cd_na_rows <- cd_new[which(rowSums(is.na(cd_new)) > 0),]
+#head(cd_na_rows)
+
+
+##### It seems data are missing mostly after Jan 23rd 2023. 
+######## Therefore, I'm taking data before Jan 23rd 2023 ################
+
+start_date <- as.Date("2023-01-23")
+data_subset <- filter(cd_new,covid.date  <= start_date)
+
+colnames(data_subset)
+
+########################
+
+#"covid.continent"               "covid.location"                "covid.date"                   
+# "covid.total_cases"             "covid.new_cases"               "covid.total_deaths"           
+# "covid.new_deaths"              "covid.total_vaccinations"      "covid.people_fully_vaccinated"
+ #"covid.total_boosters"          "covid.icu_patients"  
+##############################################
+
+
+table(data_subset$covid.continent) ## This has blank values
+
+#remove blank values
+cdd <- data_subset %>% filter(covid.continent != "")
+table(cdd$covid.continent)
+
+```
+
+5. I choose to impute the numerical values using linear interpolation as most covid data has a linear pattern and not any seasonality.
+
+```{r, warning=FALSE, message=FALSE}
+
+library(imputeTS)
+imp_cd <- na_interpolation(cdd,option = "linear")
+
+```
+
+
+6. This is a simple 3d plot.
+
+It seems there is still data cleaning needed to do.
+
+```{r}
+
+fig <- plot_ly(cdd, x = ~year, y = ~covid.total_deaths, z = ~covid.continent, type = 'scatter3d', mode = 'lines', color = ~covid.continent, line = list(width = 1))
+
+fig
+```
+
+
+7. We can try to use `markers` instead of `lines` to see if it makes it much clearer.
+
+```{r, warning=FALSE, message=FALSE}
+
+fig <- plot_ly(cdd, x = ~covid.continent, y = ~covid.total_deaths, z = ~covid.total_vaccinations, type = 'scatter3d', mode = 'markers', color = ~covid.continent, marker=list(opacity=0.5))
+
+fig
+```
+
+8. Again we are using the wages data here. This is much better than the covid plot as this data is very cleaned.
+
+You can observe many facts from this 3d plot about wages and salaries in different industries. 
+
+What can you observe?
+
+```{r}
+head(dfw_new)
+dfw_new$Year<-as.factor(wages$Year)
+fig <- plot_ly(dfw_new, x = ~Year, y = ~Wages, z = ~Industry, type = 'scatter3d', mode = 'lines', color = ~Industry)
+
+fig
+```
+
+
+9. I'm going to save covid data set to use in tableau.
+
+```{r}
+write.csv(cdd,"covide_cleaned.csv")
+```
+

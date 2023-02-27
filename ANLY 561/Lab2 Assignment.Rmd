@@ -1,0 +1,114 @@
+---
+title: "Lab2 Assignment"
+author: "Dr. Purna Gamage"
+
+output: rmdformats::material
+---
+
+# REQUIRED - 30% of the Grade 
+
+## Required: (5 - min Hackathon :) )
+At the end of the class, each team will get 5 minutes to show their Data Viz and describe what you have found about the dataset. You can create a dashboard, 1-2 page doc, a web page,...etc (any mode you prefer)
+
+#  Problem 1: 
+
+You can choose 3 (or all) of these data sets. Use `Plotly` and `Tableau` (if you set up the Tableau account). 
+
+### Be creative!!
+
+Try different type of plots. Few choices...
+
+1. Line graphs (3d or non-3d)
+2. Bar graphs (Interactive)
+3. Candlestick plots
+4. Interactive Scatter plots
+5. Any Animated plots
+
+
+## Data sets to Use:
+
+
+ **(a). COVID data** 
+(`owid-covid-data_new.csv`)
+
+
+ **(b). Spotify Data **
+(`spotify2.csv`)
+
+
+ **(c). BEA**
+
+You can download data from here:
+<https://www.bea.gov/itable/national-gdp-and-personal-income>
+
+Now here, you will have more variables,categories to create meaningful Data Visualizations.
+
+
+ **(d). One data set from plotly express - that we didn't use in class;**
+
+<https://plotly.com/python-api-reference/generated/plotly.data.html#module-plotly.data>
+
+
+## When creating a data visualization, there are several important things to consider:
+
+a. The purpose of the visualization: What is the main message you want to convey through the visualization? This will guide the choice of visualization type, data to include, and design elements.
+
+b. The audience: Who will be viewing the visualization? This will affect the level of complexity and the type of information to include.
+
+c. The data: Make sure the data is accurate, relevant and appropriate to the purpose of the visualization.
+
+d. The scales: Choose the scales and axis labels carefully. The scales should be chosen to best represent the data and the labels should be clear and easy to understand.
+
+e. The design: Use colors, labels, and other design elements to make the visualization as clear and easy to understand as possible. 
+
+f. The type of visualization: Choose the most appropriate visualization for the data and the message you want to convey.
+
+g. The context: Consider how the visualization will be used and where it will be presented.
+
+h. Interactivity: If you are using an interactive visualization, make sure it is easy to use and understand.
+
+i. Test and refine: After you present your visualization to the class and get feedback, make any necessary adjustments before submitting the assignment.
+
+
+
+
+
+# Problem 2: Time Series in Tableau 
+
+1. Try to create a dashboard or a story and publish it to `Tableau Public`. Include the link here.  
+
+2. You can find more details here:
+<https://www.youtube.com/watch?v=aaaILjNPHSs>
+
+Example: <https://public.tableau.com/profile/dr.purna.gamage#!/vizhome/covidTableasu/Story1>
+
+
+
+# Problem 3: (No submission)
+
+1. Discuss and Practice plotly 
+
+(a). References
+
+<https://plotly.com/python/time-series/>
+
+For more details  
+
+<https://plotly.com/python-api-reference/generated/plotly.data.html>
+  
+  
+(b). Referring to the python codes discussed in Canvas.
+
+
+
+------------------------------------------------
+
+
+# Extra Practice
+
+3. Seaborn  
+
+
+<https://seaborn.pydata.org/generated/seaborn.lineplot.html>
+
+
