@@ -1,0 +1,86 @@
+---
+title: "Ly,Cuong-HW2"
+author: "Cuong Ly"
+date: '2023-01-28'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+------------
+# Problem 2.25
+------------
+```{r}
+# Part a
+s8.sigma <- matrix(c(25,-2,4,-2,4,1,4,1,9),ncol=3,byrow=TRUE)
+v.half <- sqrt(diag(s8.sigma))
+rho <- cov2cor(s8.sigma)
+rho.check <- solve(diag(v.half)) %*% s8.sigma %*% solve(diag(v.half))
+sigma.check <- diag(v.half) %*% rho %*% diag(v.half)
+
+# Part b
+vhalf <- matrix(c(5,0,0,0,2,0,0,0,3),ncol=3,byrow=TRUE)
+s8.sigma == vhalf %*%  rho %*% vhalf
+```
+
+
+------------
+# Problem 2.41
+------------
+```{r}
+mean_vector <- matrix(c(3,2,-2,0),ncol=1,byrow=TRUE)
+A <- matrix(c(1,-1,0,0,1,1,-2,0,1,1,1,-3),ncol=4,byrow=TRUE)
+sigma <- matrix(c(3,0,0,0,0,3,0,0,0,0,3,0,0,0,0,3),ncol=4,byrow=TRUE)
+
+
+# Part a
+A %*% mean_vector
+
+# Part b
+A %*% sigma %*% t(A)
+
+# From b, the linear combination of non-diagonal pairs are zero. Thus, all pairs of linear combination have zero covariances. 
+```
+
+------------
+# Problem 3.5b
+------------
+```{r}
+sn <-  matrix(c(2,-3,-3,6),ncol=2,byrow=TRUE)
+s <- 3/2 * sn
+det(s)
+```
+
+
+------------
+# Problem 3.6
+------------
+```{r}
+s13.x <- matrix(c(-1,2,5,3,4,2,-2,2,3),ncol=3,byrow=FALSE)
+colMeans(s13.x)
+
+# Part a
+xbar <- colMeans(s13.x)
+d1 <- s13.x[,1]-xbar[1]*rep(1,3)
+d2 <- s13.x[,2]-xbar[2]*rep(1,3)
+d3 <- s13.x[,3]-xbar[3]*rep(1,3)
+
+# Since d1 = d2 = d3, the matrix of deviations is not of full rank.
+
+# Part b
+sn <- 1/nrow(s13.x) * t(cbind(d1,d2,d3)) %*% cbind(d1,d2,d3)
+s <- nrow(s13.x)/(nrow(s13.x)-1) * sn
+det(s)
+# Since the determinant is 0, the 3 vectors lie in a 2 dimensional space
+
+# Part c
+# The total sample variance is calculated by summing the diagonal of matrix S: 9 + 1 + 7 = 16
+```

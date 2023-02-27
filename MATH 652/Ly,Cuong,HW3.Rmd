@@ -1,0 +1,151 @@
+---
+title: "Homework 3"
+author: "Cuong Ly"
+date: '2023-02-02'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# --------------
+# Problem 4.39
+#---------------
+
+```{r}
+# Part a
+data <- read.table("/Users/taikhanghao/Desktop/spring 23/multi/T4-6.DAT")
+colnames(data) <- c("independence", "support", "benevolence", "conformity", "leadership")
+shapiro.test(data[,1]) # Not normal
+shapiro.test(data[,2]) # Not normal
+shapiro.test(data[,3]) # Normal
+shapiro.test(data[,4]) # Normal
+shapiro.test(data[,5]) # Not normal
+# Plot a Q-Q norm and qq line
+qqnorm(data[,1])
+qqnorm(data[,2])
+qqnorm(data[,3])
+qqnorm(data[,4])
+qqnorm(data[,5])
+#At 5% significance level, we fail to reject 3-Benevolence and 4-Conformity. Thus, these two are normally distributed and the other three are not
+
+```
+
+
+```{r}
+# Part b
+library(mvoutlier)
+chisq.plot(data[,1:5])
+# The last observation is an outlier. If we remove that outlier, the data is normal 
+```
+
+```{r}
+# Part c
+data$independence <- sqrt(data$independence)
+#data$support <- log(data$support)
+data$support <- sqrt(data$support)
+data$leadership <- sqrt(data$leadership)
+
+shapiro.test(data[,1])
+shapiro.test(data[,2])
+shapiro.test(data[,3])
+shapiro.test(data[,4])
+shapiro.test(data[,5])
+
+# Try both sqrt and log methods for support but it is not normal distributed
+```
+
+# --------------
+# Problem 5.1
+#---------------
+```{r}
+# Part a
+x <- matrix(c(2,8,6,8,12,9,9,10),ncol=2)
+dim(x)
+n <- nrow(x)
+p <- ncol(x)
+mu0 <- c(7,11)
+xbar <- colMeans(x)
+xbar.mat <- matrix(rep(xbar,4),ncol=2,byrow=TRUE)
+s <- (1/3)*t(x-xbar.mat)%*%(x-xbar.mat)
+tsqstat <- n*t(xbar-mu0)%*%solve(s)%*%(xbar-mu0)
+
+# T^2 is 9.09 
+
+
+# Part c
+pval <- 1-pf(tsqstat/5,p,n-p)
+# At 5% significance level, the p-value is 0.268. We fail to reject the null hypothesis. The sample mean is not statistically different.
+
+```
+
+
+# --------------
+# Problem 5.4
+#---------------
+```{r}
+# Part a
+sweat <- read.table("/Users/taikhanghao/Desktop/spring 23/multi/T5-1.DAT")
+colnames(sweat) <- c("sweatrate", "sodium", "potassium")
+sweat.xbar <- colMeans(sweat)
+
+sweat.xbarmat <- matrix(rep(sweat.xbar,nrow(sweat)),ncol=length(sweat.xbar),byrow=TRUE)
+sweat.s <- (1/(nrow(sweat)-1)) * t(as.matrix(sweat-sweat.xbarmat)) %*% as.matrix(sweat-sweat.xbarmat)
+eigen(sweat.s)
+alpha <- 0.10 #let's suppose a 90% confidence region
+fval <- qf(1-alpha,ncol(sweat),nrow(sweat)-ncol(sweat))
+sqrt(eigen(sweat.s)$values[1])*sqrt(ncol(sweat)*(nrow(sweat)-1)*fval/(nrow(sweat)*(nrow(sweat)-ncol(sweat))))
+sqrt(eigen(sweat.s)$values[2])*sqrt(ncol(sweat)*(nrow(sweat)-1)*fval/(nrow(sweat)*(nrow(sweat)-ncol(sweat))))
+sqrt(eigen(sweat.s)$values[3])*sqrt(ncol(sweat)*(nrow(sweat)-1)*fval/(nrow(sweat)*(nrow(sweat)-ncol(sweat))))
+
+# The result is half Find the half length 
+```
+
+```{r}
+# Part b
+qqnorm(sweat[,1])
+qqline(sweat[,1])
+shapiro.test(sweat[,1])
+
+qqnorm(sweat[,2])
+qqline(sweat[,2])
+shapiro.test(sweat[,2])
+
+qqnorm(sweat[,3])
+qqline(sweat[,3])
+shapiro.test(sweat[,3])
+
+# From the three Q-Q Plot and the Shapiro tests, we conclude that the three variables are normally distributed
+
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(sweat[,1],sweat[,2],xlab = 'sweatrate',ylab='sodium')
+plot(sweat[,2],sweat[,3],xlab = 'sodium',ylab='potassium')
+plot(sweat[,1],sweat[,3],xlab = 'sweatrate',ylab='potassium')
+```
+
+
+# --------------
+# Problem 5.11
+#---------------
+
+```{r}
+sweat2 <- read.table("/Users/taikhanghao/Desktop/spring 23/multi/P5-11.dat")
+sweat2.xbar <- colMeans(sweat)
+
+```
+
+```{r}
+# Part c
+qqnorm(sweat2[,1])
+qqline(sweat2[,1])
+qqnorm(sweat2[,2])
+qqline(sweat2[,2])
+
+# The above two Q-Q plots are show non-normal graph, so we reject the null hypothesis for normality. 
+```
+
