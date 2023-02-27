@@ -4,3 +4,5 @@ MATH 504 : Numerical Methods
 MATH 510 : Mathematical and Statistical Computing
 MATH 656 : Data Mining
 MATH 605 : Financial Mathematics
+MATH 652 : Applied Multivariate Analysis
+ANLY 561 : Time Series
